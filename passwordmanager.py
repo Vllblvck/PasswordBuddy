@@ -82,22 +82,21 @@ def authenticate_user():
 
 def main():
     args = parse_args()
-    
     try:
         passdb = PasswordsDb('passwords.sqlite3')
         authenticate_user()
         pe = PasswordEncryptor()
-        
+
         if args.action == 'add':
             password = pe.generate_password()
-            encrypted = pe.encrypt('!589Vllblvck!579', password)
+            encrypted = pe.encrypt('masterpassword', password)
             passdb.add_password(args.service_name, encrypted)
         elif args.action == 'del':
             passdb.delete_password(args.service_name)
         elif args.action == 'get':
             password = passdb.get_password(args.service_name)
             if password is not None:
-                decrypted = pe.decrypt('!589Vllblvck!579', password[0])
+                decrypted = pe.decrypt('masterpassword', password[0])
                 print(decrypted)
             else:
                 print("No password for given service name")
