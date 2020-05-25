@@ -8,13 +8,14 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 
+
 class PasswordEncryptor:
-    
+
     def __init__(self, salt_file='salt'):
         self.salt_file = salt_file
 
-        
-    def _getsalt(self):
+
+    def __getsalt(self):
         if os.path.exists(self.salt_file):
             file = open(self.salt_file, 'rb')
             salt = file.read()
@@ -22,39 +23,39 @@ class PasswordEncryptor:
             return salt
         else:
             file = open(self.salt_file, 'wb')
-            salt = os.urandom(16)
+            salt = os.urandom(32)
             file.write(salt)
             file.close()
             return salt
 
 
-    def _generatekey(self, masterpassword):
+    def hashpass(self, password):
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=self._getsalt(),
+            salt=self.__getsalt(),
             iterations=100000,
             backend=default_backend()
         )
 
         return base64.urlsafe_b64encode(
-            kdf.derive(masterpassword.encode())
+            kdf.derive(password.encode())
         )
 
 
     def encrypt(self, masterpassword, password):
-        f = Fernet(self._generatekey(masterpassword))
+        f = Fernet(self.hashpass(masterpassword))
         encryptedpass = f.encrypt(password.encode())
         return encryptedpass
 
 
     def decrypt(self, masterpassword, password):
-        f = Fernet(self._generatekey(masterpassword))
+        f = Fernet(self.hashpass(masterpassword))
         decryptedpass = f.decrypt(password)
         return str(decryptedpass, 'utf-8')
 
 
     def generate_password(self, length=16):
-        alphabet = string.ascii_letters + string.digits + string.punctuation 
+        alphabet = string.ascii_letters + string.digits + string.punctuation
         password = ''.join(secrets.choice(alphabet) for i in range(length))
-        return password    
+        return password

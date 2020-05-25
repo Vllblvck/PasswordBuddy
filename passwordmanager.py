@@ -1,8 +1,10 @@
+import sys
 import argparse
 import sqlite3
 from sqlite3 import Error
 
 from passwordencryptor import PasswordEncryptor
+
 
 class PasswordsDb:
 
@@ -56,7 +58,6 @@ class PasswordsDb:
 
 
 def parse_args():
-    authenticate_user()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'action',
@@ -76,30 +77,59 @@ def parse_args():
     return parser.parse_args()
 
 
-def authenticate_user():
-    pass
-
-
 def main():
     args = parse_args()
     try:
         passdb = PasswordsDb('passwords.sqlite3')
-        authenticate_user()
         pe = PasswordEncryptor()
+        masterpass = None
+
+        if passdb.get_password('masterpassword') is None:
+            print('This is your first time running password buddy')
+            print('Please enter your master password:')
+            masterpass = input()
+            print('Renter your password:')
+            masterpass2 = input()
+
+            if masterpass == masterpass2:
+                masterpass = pe.hashpass(masterpass)
+                passdb.add_password('masterpassword', masterpass)
+                print('Your master password is: ' + masterpass)
+                print('Please remember it :)')
+            else:
+                print('Passwords are not equal')
+                sys.exit()
+            
+        else:
+            print('Please enter your master password:')
+            masterpass = input()
+            masterpass = pe.hashpass(masterpass)
+            dbpassword = passdb.get_password('masterpassword')[0]
+            if masterpass != dbpassword:
+                print('Authentication failed')
+                sys.exit()
 
         if args.action == 'add':
+            if passdb.get_password(args.service_name) is not None:
+                print('Password for given service already exists')
+                sys.exit()    
             password = pe.generate_password()
             encrypted = pe.encrypt('masterpassword', password)
             passdb.add_password(args.service_name, encrypted)
+            print('Your password for ' + args.service_name + ' is ' + password)
+
         elif args.action == 'del':
             passdb.delete_password(args.service_name)
+            print('Password for ' + args.service_name + ' deleted')
+        
         elif args.action == 'get':
             password = passdb.get_password(args.service_name)
-            if password is not None:
+            
+            if password is not None and args.service_name != 'masterpassword':
                 decrypted = pe.decrypt('masterpassword', password[0])
                 print(decrypted)
             else:
-                print("No password for given service name")
+                print('No password for given service')
 
     except Error as e:
         print('Error during connection with db')
