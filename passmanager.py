@@ -159,12 +159,6 @@ def parse_args():
             'service_name',
             help='Name of the service that password is stored for'
         )
-        parser.add_argument(
-            '-ls',
-            '--listservices',
-            help = 'Lists all saved services',
-            action='store_true'
-        )
         return parser.parse_args()
 
 
