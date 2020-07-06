@@ -1,2 +1,2 @@
 # Password Buddy  
-WORK IN PROGRESS!!!
+Password manager with encryption written in python  
